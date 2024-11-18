@@ -3,7 +3,7 @@
 #if(EasyOledUI_timeWidget)
 
 
-#include "timeFuntions.h"  // Incluye las funciones y librerias requeridas para procesar el tiempo
+#include "externalCode/timeFuntions.h"  // Incluye las funciones y librerias requeridas para procesar el tiempo
 
 
 

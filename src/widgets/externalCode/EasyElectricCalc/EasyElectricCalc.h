@@ -1,5 +1,7 @@
 // Ajustes de funciones
 //--------------------------------------------------------------------------
+
+/*
 const int NUM_MUESTRAS = 500;      // Número de muestras (ajustable)
 const int TIEMPO_LECTURA = 100;    // Duración de la lectura en milisegundos
 const int esperaUs = 100;          // Espera entre cada medicion en microsegundos
@@ -7,7 +9,7 @@ const int esperaUs = 100;          // Espera entre cada medicion en microsegundo
 float factorSensor = 30.0;         // Factor del sensor (ajustable)
 float valorMinLecturaRMS = 0.25;   // Valor mas bajo que se puede registrar. Para eliminar ruido.
 float factorAmplificador = 10;     // Ajusta el valor según la amplificación del ccircuito de entrada
-
+*/
 
 
 // Funcion para calcular la corriente RMS
@@ -17,7 +19,7 @@ float factorAmplificador = 10;     // Ajusta el valor según la amplificación d
 
 // Funcion 1: Toma una serie de lecturas mediante un ADC y devuelve el voltaje RMS. Tambien asigna el offset a la direccion de memoria indicada.
 //==================================================================
-float medirValorRMS(int pinSensor, float * voltajes, float &offset){
+float medirValorRMS(int pinSensor, float * voltajes, float &offset, float factorSensor = 30.0, float valorMinLecturaRMS = 0.25, int NUM_MUESTRAS = 500, int TIEMPO_LECTURA = 100, int esperaUs = 100){
     long tiempoInicial = millis();
 
     // Paso 1: Leer y guardar voltajes durante un tiempo específico
@@ -50,7 +52,7 @@ float medirValorRMS(int pinSensor, float * voltajes, float &offset){
 
 // Funcion 2: Utiliza la funcion 1 para adaptar el valor RMS a un valor de corriente equivalente segun el sensor
 //==================================================================
-float calcularCorrienteRMS(float &valorRMS, float &offset) {
+float calcularCorrienteRMS(float &valorRMS, float &offset, float factorSensor = 30.0, float factorAmplificador = 10.0){
     return valorRMS * (factorSensor/factorAmplificador); // convierte el valor de voltaje RMS medido a la corriente equivalente segun sensor 
 }
 

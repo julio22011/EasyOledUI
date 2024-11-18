@@ -3,8 +3,8 @@
  * crear una interfaz de usuario en la pantalla OLED
 */
 
-#if !defined(librericaPreferenciasIncluida)
-#define librericaPreferenciasIncluida
+#if !defined(libreriaPreferenciasIncluida)
+#define libreriaPreferenciasIncluida
 #include <Preferences.h>                  // incluir libreria que permite guardar Ajustes en la memoria
 #endif
 
@@ -12,9 +12,11 @@
 
 #if !defined(claseUI_OLEDIncluida) // if para evitar ejecutar el mismo codigo dos veces
 #define claseUI_OLEDIncluida
+ 
+
 
 //=====================================================================
-//           Parametros generales de la pantalla
+//           Parametros generales de la pantalla y ajustes
 //=====================================================================
 
 // Definicion del tamaño de la pantalla:
@@ -25,6 +27,11 @@
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define duracionMensajeMS 1000 // Tiempo de espera para mostrar mensajes de error en milisegundos
+
+// Activar/desacitvar widgets
+#define EasyOledUI_osciloscopeWidget  // activar el widget de osciloscopio
+//...
+
 //=====================================================================
 
 #include <Adafruit_SSD1306.h>   // se requiere la clase de la pantalla
@@ -45,26 +52,44 @@ bool callBackEjecutarAccion(int menuActual, int opcionActual){
 */
 
 
+//=====================================================================
+//           Incorporacion de los widgets
+//=====================================================================
+
+#include "widgets/widget.h"  // Clase de los widgets
+
+#ifdef EasyOledUI_osciloscopeWidget
+  #include "widgets/osciloscopeWidget.h"  // Matriz con la imagen del logo y el tamaño
+#endif
+
+//=====================================================================
+
+
 class UI_OLED {
   //
   private:
 
   public:
+
+  // Clases asociadas
+  //class Widget;    // Clase para crear widgets
   
   // Varibles
-  Adafruit_SSD1306 display; // permite almacenar la clase de la pantalla asociada
+  Adafruit_SSD1306 * display; // permite almacenar la clase de la pantalla asociada
   uint16_t menuActual = 0;
   int numeroMenus = 0;                      // guarda la cantidad de menus existentes
   menu *menusGuardados = NULL;              // Puntero hacia los objetos de tipo menu
-  botones botonesUI;
+  botones * botonesUI;
   bool cambioPendiente = true;              // Permite indicar desde el exterior de la clase si se debe refrescar los menus
   bool mensajePendiente = false;            // Permite indicar desde el exterior si de debe mostrar un mensaje
   String mensajeEsporadico = "None";
+  Widget * widgets = NULL;                          // Puntero hacia los objetos de tipo widget
+  int numeroWidgets = 0;                     // Cantidad de widgets existentes
 
   // Funciones
   bool mostrarMenuEnOLED(menu menuPorMostrar);
-  bool asociarPantalla(Adafruit_SSD1306 displayPorAsociar);
-  bool asociarBotones(botones _botones);
+  bool asociarPantalla(Adafruit_SSD1306 * displayPorAsociar);
+  bool asociarBotones(botones * _botones);
   void handleInterruptUI();
   bool asociarMenu(int numMenus, menu *menusPorAsociar);
   bool imprimirTitulosDeMenusSerial();
@@ -94,12 +119,12 @@ bool UI_OLED::asociarMenu(int numMenus, menu *menusPorAsociar){
   return 1;
 }
 
-bool UI_OLED::asociarPantalla(Adafruit_SSD1306 displayPorAsociar){
+bool UI_OLED::asociarPantalla(Adafruit_SSD1306 * displayPorAsociar){
   // Esta funcion vincula el UI con la pantalla OLED
   display = displayPorAsociar;
 }
 
-bool UI_OLED::asociarBotones(botones _botones){
+bool UI_OLED::asociarBotones(botones * _botones){
   // Esta funcion vincula los botones con la UI
   botonesUI = _botones;
 }
@@ -120,7 +145,7 @@ bool UI_OLED::imprimirTitulosDeMenusSerial(){
 // Funcion para iniciar la pantalla
 bool UI_OLED::setupPantallaOled(int I2C_SDA, int I2C_SCL){
   Wire.begin(I2C_SDA, I2C_SCL);  // iniciar I2C con los pines definidos
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  if(!display->begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
     //for(;;); // Don't proceed, loop forever
   }
@@ -129,57 +154,57 @@ bool UI_OLED::setupPantallaOled(int I2C_SDA, int I2C_SCL){
   //display.display();
   testdrawbitmap(); // Muestra un logo en la pantalla
   vTaskDelay(pdMS_TO_TICKS(4000)); // Pause for 4 seconds
-  display.clearDisplay();
+  display->clearDisplay();
   
   // Show the display buffer on the screen. You MUST call display() after
   // drawing commands to make them visible on screen!
-  display.display();
+  display->display();
 }
 
 // Logo inicial
 // --------------------------------------
 #include "logoInicial.h"  // Matriz con la imagen del logo y el tamaño
 void UI_OLED::testdrawbitmap(void) {
-  display.clearDisplay();
+  display->clearDisplay();
 
-  display.drawBitmap(
-    (display.width()  - LOGO_WIDTH ) / 2,
-    (display.height() - LOGO_HEIGHT) / 2,
+  display->drawBitmap(
+    (display->width()  - LOGO_WIDTH ) / 2,
+    (display->height() - LOGO_HEIGHT) / 2,
     LogoWaveSense, LOGO_WIDTH, LOGO_HEIGHT, 1);
-  display.display();
+  display->display();
 }
 // --------------------------------------
 
 bool UI_OLED::mostrarMenuEnOLED(menu menuPorMostrar){
   // Funcion para desplagar un menu en la pantalla
-  display.clearDisplay();
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.drawLine(1, 15, display.width()-15, 15, SSD1306_WHITE);
-  display.setCursor(0,6);
-  display.println(menuPorMostrar.titulo); // mostrar el titulo
-  display.setCursor(0,17);
+  display->clearDisplay();
+  display->setTextSize(1);             // Normal 1:1 pixel scale
+  display->setTextColor(SSD1306_WHITE);        // Draw white text
+  display->drawLine(1, 15, display->width()-15, 15, SSD1306_WHITE);
+  display->setCursor(0,6);
+  display->println(menuPorMostrar.titulo); // mostrar el titulo
+  display->setCursor(0,17);
   for (int i = 0; i < menuPorMostrar.numOpc; i++)
   {
     if(i==menuPorMostrar.opcionSelecionada){ // verifica cual es la opcion en pantalla y le pone una marca
-      display.println("> " + menuPorMostrar.opciones[i]);
+      display->println("> " + menuPorMostrar.opciones[i]);
     } else{
-      display.println("  " + menuPorMostrar.opciones[i]);
+      display->println("  " + menuPorMostrar.opciones[i]);
     }
   }
-  display.display();
+  display->display();
 }
 
 
 // Funcion para mostrar un mensaje de aviso
 bool UI_OLED::mostrarMensaje(String mensaje, int duracion = duracionMensajeMS){
-  display.clearDisplay();             // Borra el buffer de la pantalla
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.setCursor(5,32);
+  display->clearDisplay();             // Borra el buffer de la pantalla
+  display->setTextSize(1);             // Normal 1:1 pixel scale
+  display->setTextColor(SSD1306_WHITE);        // Draw white text
+  display->setCursor(5,32);
 
-  display.println(mensaje);  // probando si devuelve valor
-  display.display();
+  display->println(mensaje);  // probando si devuelve valor
+  display->display();
   vTaskDelay(pdMS_TO_TICKS(duracion)); // Pausa para mostrar el mensaje
 }
 
@@ -198,7 +223,7 @@ bool UI_OLED::callBackEjecutarAccionMenu(int menuActual, int opcionActual){
 
 // if algo cambia, actualizar pantalla
 bool IRAM_ATTR UI_OLED::update(){
-  char botonPresionado = botonesUI.botonPresionado();  // Varible para recibir el boton presionado
+  char botonPresionado = botonesUI->botonPresionado();  // Varible para recibir el boton presionado
   if (botonPresionado != '0'){ // si se presiona un boton, verifica cual fue
     if(botonPresionado == '1'){
       menusGuardados[menuActual].dismimuirOpcionSelecionada(1);
@@ -217,7 +242,6 @@ bool IRAM_ATTR UI_OLED::update(){
     }
     mostrarMenuEnOLED(menusGuardados[menuActual]); // actualiza el menu
   }
-
   if(mensajePendiente){
     // Permite activar mensaje esporadico
     mostrarMensaje(mensajeEsporadico);
@@ -227,6 +251,14 @@ bool IRAM_ATTR UI_OLED::update(){
     // Actualiza pantalla si se hace alguna modificacion afuera que requiera un refresco
     mostrarMenuEnOLED(menusGuardados[menuActual]); // actualiza el menu
     cambioPendiente = false;
+  }
+
+  // Actualizar el widget activo
+  for(int i=0; i < numeroWidgets; i++){
+    while(widgets[i].getStatus()){
+      widgets[i].update();
+      cambioPendiente = true;  // Volver a actualizar la pantalla con el menu correspondiente al salir del widget
+    }
   }
   return 1;
 } // fin de funcion
