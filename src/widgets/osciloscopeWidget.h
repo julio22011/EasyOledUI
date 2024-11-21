@@ -6,6 +6,7 @@
 // Definiciones generales (hay que hacer cambios en orden)
 // -----------------------
 #define NUM_POINTS SCREEN_WIDTH    // Número de puntos para la gráfica (ancho de la pantalla)
+#define firstEspacioSup 10         // Espacio superior para la grilla
 
 // Ajustes de Widget (deben moverse a una clase de sensores)
 #define FirstFactorSensor 30.0
@@ -13,20 +14,20 @@
 #define FirstFactorAmplificador 10
 
 // Ajustes medicion RMS
-#define FirstNUM_MUESTRAS 500      // Número de muestras (ajustable)
+#define FirstNUM_MUESTRAS 200      // Número de muestras (ajustable)
 #define FirstTIEMPO_LECTURA 100    // Duración de la lectura en milisegundos
 #define FirstEsperaUs 100          // Espera entre cada medicion en microsegundos
 
-
+#include "externalCode\EasySensor\EasySensor.h"
 #include "additionalDrawingFun.h"                            // Funciones de dibujo adicionales, ya que no las incluye Adafruit_SSD1306.h
 #include "externalCode/EasyElectricCalc/EasyElectricCalc.h"  // Funciones para cálculos eléctricos
 
 // Widget de osciloscopio
 class OsciloscopeWidget: public Widget{
 protected:
-    int * inputs;
+    EasySensor * sensors;  // Sensor asociado al widget
     char * letters;  // Letra que identifica cada medición
-    int currentInput = 0;  // Entrada actual
+    int currentChanel = 0;  // Entrada actual
 
     // Variables ajustables de sensor
     float factorSensor = FirstFactorSensor;         // Factor del sensor (ajustable)
@@ -39,11 +40,11 @@ protected:
     const int esperaUs = FirstEsperaUs;          // Espera entre cada medicion en microsegundos
 
     // Variables de trabajo
-    float voltajes[FirstNUM_MUESTRAS]; // Array para almacenar los valores del ADC
+    float * voltajes;            //float voltajes[FirstNUM_MUESTRAS]; // Array para almacenar los valores del ADC
+    unsigned long * times;       //unsigned long times[FirstNUM_MUESTRAS]; // Array para almacenar los tiempos de lectura
     int oscValues[NUM_POINTS]; // Array para almacenar los valores reflejados en pantalla
     int xPos = 0;              // Posición x actual para dibujar en la pantalla
     float offset = 0.0;
-    float valorRMS = 0.0;
     float outputValue = 0.0;
 private:
     void measureData();  // Proceso para medir los datos
@@ -51,7 +52,7 @@ private:
     void drawMesurement();  // Dibujar medición
 
 public:
-    OsciloscopeWidget(Adafruit_SSD1306 * display, botones * botonesUI_w, int * inputPins, char * inLetters): Widget(display, botonesUI_w), inputs(inputPins), letters(inLetters) {};
+    OsciloscopeWidget(Adafruit_SSD1306 * display, botones * botonesUI_w, EasySensor * sensors_w, char * inLetters): Widget(display, botonesUI_w), sensors(sensors_w), letters(inLetters) {};
     //~OsciloscopeWidget(); // genera error en la compilación
 
     //void draw();
@@ -75,11 +76,30 @@ char OsciloscopeWidget::update() {
 
 // Proceso para medir los datos
 void OsciloscopeWidget::measureData(){
+    /*
     valorRMS = medirValorRMS(25,voltajes,offset);
     Serial.println(valorRMS);
 
     // Caluclar el valor de salida con los ajustes necesarios segun el tipo de sensor
     outputValue = calcularCorrienteRMS(valorRMS, offset, factorSensor, factorAmplificador);  // Debe cambiar segun el tipo de sensor
+    */
+
+    // Actualizar el valor de la medición
+    outputValue = sensors->getSensorData()[currentChanel];      // currentChanel es el canal elegido, en este caso hay 6 y el setimo es la frecuencia
+
+    voltajes = sensors->getSensorChanelRawData(currentChanel);
+    times = sensors->getSensorChanelRawTimes(currentChanel);
+    offset = sensors->getSensorChanelOffset(currentChanel);   // Obtener el offset del sensor en el canal actual luego de haber hecho las lecturas
+
+    // Mostrar los valores de voltajes y tiempos
+    /*
+    Serial.print("Times: ");
+    for(int i = 0; i < NUM_MUESTRAS; i++){
+        Serial.print(times[i]);
+        Serial.print(";");
+    }
+    Serial.println();
+    */
 }
 
 // Agregar lineas de fondo
@@ -95,11 +115,16 @@ void OsciloscopeWidget::drawBackground(char * variableName, float variableValue,
     display->print(" ");
     display->print(variableUnits);
 
+    // Dibujar frecuencia, canal actual y otros datos
+    // ------------------------------------------
+    // por hacer
+
+
     // Agregar lineas de diseño
     //------------------------------------------
 
     // Configurar grilla
-    int espacioSup = 10;
+    int espacioSup = firstEspacioSup;
     int sizeH = NUM_POINTS;
     int sizeV = SCREEN_HEIGHT-espacioSup;
 
@@ -121,9 +146,10 @@ void OsciloscopeWidget::drawBackground(char * variableName, float variableValue,
 
 // Dibujar medición
 void OsciloscopeWidget::drawMesurement(){
+
     // Crear valores que se mostrarán en pantalla
     for(int i = 0; i < NUM_POINTS; i++){
-        oscValues[i] = SCREEN_HEIGHT - voltajes[i]*(SCREEN_HEIGHT/3.4);
+        oscValues[i] = SCREEN_HEIGHT - (voltajes[i]-offset+1.55)*(SCREEN_HEIGHT/3.4);  // La ecuacion tambien centra el valor   
         xPos = i;
     }
 
