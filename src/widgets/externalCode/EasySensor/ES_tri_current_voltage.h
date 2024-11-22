@@ -9,7 +9,7 @@
 // Ajustes de la librería
 #define adcVoltage 3.4
 #define adcResolution 4096
-#define bufferSize 500         // tamano del buffer de lecturas y de tiempos
+#define bufferSize 200         // tamano del buffer de lecturas y de tiempos (probado con 500, muy lento)
 #define deltaMS 800
 
 #define factorSensorCorriente 30.0
@@ -53,6 +53,8 @@ bool multiMeasureRMS(ES_chanel * chanels, const int n_chanels, int NUM_MUESTRAS 
         //delayMicroseconds(esperaUs);
         ets_delay_us(esperaUs);
     }
+    unsigned long total_measument_time = micros() - tiempoInicial;
+    for(int j = 0; j < n_chanels; j++) chanels[j].setLastReadTime(total_measument_time); // Actualizar el tiempo de la última lectura
 
     // Paso 2: Calcular el offset (promedio de los voltajes leídos)
     for(int j = 0; j < n_chanels; j++){
@@ -149,16 +151,12 @@ bool ES_tri_current_voltage_sensor::begin() {   // overrride
 // Ejecuta tareas que hacer el muestreo de los sensores
 bool ES_tri_current_voltage_sensor::read() {   // overrride
     measureRMS();
-    calcEquivalentCurrents(currents);
-    calcEquivalentVoltages(voltages);
-    
-    freq = calcFreq();
+    calcEquivalentCurrents(this->currents);
+    calcEquivalentVoltages(this->voltages);
+    this->freq = calcFreq();
 
     // Agregar a sensorData los valores de currents, voltages y freq (este orden es importante al consultar los valores)
-    float data[7] = {currents[0], currents[1], currents[2], voltages[0], voltages[1], voltages[2], freq};
-
-    //Serial.print("Corriente 1: ");
-    //Serial.println(currents[0]);
+    float data[7] = {this->currents[0], this->currents[1], this->currents[2], this->voltages[0], this->voltages[1], this->voltages[2], this->freq};
 
     Serial.print("Frecuencia: ");
     Serial.println(freq);
@@ -209,6 +207,8 @@ float ES_tri_current_voltage_sensor::calcFreq(int NUM_MUESTRAS){
     float freq_offset = chanels[ch].getOffset();
     bool lastPositive = chanels[ch].getReadVoltage(0) > freq_offset; // Initial state. Aqui this->chanels[0].offset es el centro de la señal
     
+    /*
+    
     unsigned long firstCrossingTime = 0;
     bool continueFreqMeasure = true;
     int i_m = 1;
@@ -224,8 +224,9 @@ float ES_tri_current_voltage_sensor::calcFreq(int NUM_MUESTRAS){
         i_m++;
     }
     periodSum -= firstCrossingTime;  // Eliminar periodo desconocido del primer cruce
+    */
 
-    /*
+    
     for (int i = 1; i < NUM_MUESTRAS; i++) {
         bool currentPositive = chanels[ch].getReadVoltage(i) > freq_offset;
         /*
@@ -233,7 +234,7 @@ float ES_tri_current_voltage_sensor::calcFreq(int NUM_MUESTRAS){
         Serial.print(freq_offset*100); Serial.print(" "); // Tabulador
         Serial.print(chanels[ch].getReadVoltage(i)*100); Serial.print(" "); 
         Serial.println(300);
-        
+        */        
 
         if (currentPositive != lastPositive) {
             zeroCrossings++;
@@ -241,14 +242,13 @@ float ES_tri_current_voltage_sensor::calcFreq(int NUM_MUESTRAS){
             lastPositive = currentPositive;
         }
     }
-    */
     
-    Serial.print("Lapso: ");
-    Serial.println(periodSum);
-
     if (zeroCrossings > 1) {
-        float averagePeriod = periodSum / (zeroCrossings - 1);
-        return 200000.0 / averagePeriod; // Convert period to frequency in Hz
+        //float averagePeriod = periodSum / (zeroCrossings - 1);
+        //return 200000.0 / averagePeriod; // Convert period to frequency in Hz
+        float freq = zeroCrossings*1000000.0 / (2*chanels[ch].getLastReadTime());  // freq = (cruces*10e6) / (2*tiempoPorLectura*bufferSize)
+        if(chanels[ch].getRMSValue() == 0.0) return 0.0;  // Filtrar valores aleatorios
+        else return freq;
     } else {
         return 0.0; // Not enough zero crossings to determine frequency
     }

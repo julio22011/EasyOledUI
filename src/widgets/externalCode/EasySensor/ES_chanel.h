@@ -27,6 +27,7 @@ public:
     float offset;                 // Offset del sensor
     float * readVoltages;
     unsigned long * readTimes;
+    unsigned long lastReadTime;  // Tiempo de la última lectura
 
     // Funcion de inicialización (se asignan los valores iniciales)
     void initChanel(float factorSensor, float factorAmplificador, float valorMinLecturaRMS = 0.02){
@@ -46,6 +47,9 @@ public:
     void setOffset(float offset){
         this->offset = offset;
     };
+    void setLastReadTime(unsigned long time){
+        this->lastReadTime = time;
+    };
 
     bool setSensorFactors(float factorSensor, float valorMinLecturaRMS, float factorAmplificador){
         this->factorSensor = factorSensor;
@@ -62,7 +66,8 @@ public:
     float getFactorAmplificador(){return factorAmplificador;};
     float getOffset(){return offset;};
     float getReadVoltage(int n){return readVoltages[n];};
-    unsigned long getReadTime(int n){return readTimes[n];};
+    unsigned long getReadTime(int n){return readTimes[n];};      // Devuelve el tiempo de la lectura n
+    unsigned long getLastReadTime(){return lastReadTime;};       // Entrega el tiempo total que tomo hacer todas las lecturas
 
     bool setRMSValue(float value){this->rmsValue = value;};
     float getRMSValue(){return rmsValue;};
