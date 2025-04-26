@@ -14,20 +14,40 @@ enum {
     tri_current_voltage_sensor
 };
 
+const int type_dataLength[] = {1, 2, 4, 2, 4, 7};   // Longitud de los datos de cada sensor
+
 
 class EasySensor {
 protected:
     int sensorType; // Indica el tipo de sensor
     bool sensorStatus = false;  // Indica si el sensor está listo para leer
     float * sensorData;         // Valor del sensor: Al ser un puntero, se puede cambiar el tamaño del array
+    int dataLength = -1;         // Longitud de los datos del sensor
 public:
     EasySensor(int sensorType_u = undefined_sensor) : sensorType(sensorType_u){};
     ~EasySensor(){};
 
+    // Obtener tamaño de los datos
+    int getDataLength(){
+        if(sensorData != NULL){
+            dataLength = type_dataLength[this->sensorType];   // Obtener la longitud de los datos
+        } else dataLength = -1;
+        return dataLength;
+    };
+
     // Funciones
     bool getSensorStatus(){return sensorStatus;};
-    float * getSensorData(){
+
+    float * getSensorData(bool newRead = true){
         if(getSensorStatus()){
+            if(!newRead){
+                if(sensorData != NULL) return sensorData;  // Devolver los valores actuales sin hacer nueva lectura
+                else{
+                    Serial.println("Error s5005: Sensor data not defined."); 
+                    static float errorData[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};  // Devolver un valor de error
+                    return errorData;
+                }
+            } 
             if(read()) return sensorData;  // // Realizar proceso de lectura y Devolver los valores
             else{Serial.println("Error s: Read fun not defined on sensor."); return NULL;}
         }

@@ -10,21 +10,22 @@
 
 // Ajustes
 #define SD_CS 4
+
+// Variables de estado
 bool errorSD = false;
 bool SD_init = false;
 
+
 // Funciones para la memoria SD
 //---------------------------------------------------------------------
-
-bool initSD(){
-    if(SD_init) return true;
-
+bool mountSD(){
     if(!SD.begin(SD_CS)){ // Usando 4 como CS
         Serial.println("Card Mount Failed");
         errorSD = true;
         return false;
     }
 
+    if(SD_init) return true; // No repetir el proceso cada vez que se consulta si sigue conectata la SD
     SD_init = true;  // Indica que la SD ya fue inicializada para no repetir el proceso
 
      // Estado de tarjeta SD
@@ -107,14 +108,14 @@ void removeDir(fs::FS &fs, const char * path){
 
 
 // Funcion para escribir en un archivo
-void writeFile(fs::FS &fs, const char * path, const char * message){
+bool writeFile(fs::FS &fs, const char * path, const char * message){
     Serial.printf("Writing file: %s\n", path);
 
     File file = fs.open(path, FILE_WRITE);
     if(!file){
         Serial.println("Failed to open file for writing");
         //ui.mostrarMensaje("Failed to open file for writing");
-        return;
+        return false;
     }
     if(file.print(message)){
         Serial.println("File written");
@@ -122,8 +123,44 @@ void writeFile(fs::FS &fs, const char * path, const char * message){
     } else {
         Serial.println("Write failed");
         //ui.mostrarMensaje("Write failed");
+        return false;
     }
     file.close();
+    return true;
 }
+
+
+
+// Función para crear una estructura de carpetas
+bool createDirectories(const char *path) {
+  String fullPath = "";
+  String directory = "";
+  bool success = true;
+
+  // Divide la ruta en partes usando '/'
+  for (int i = 0; path[i] != '\0'; i++) {
+    char c = path[i];
+    if (c == '/' || path[i + 1] == '\0') { 
+      if (path[i + 1] == '\0') directory += c; // Añade el último segmento
+
+      fullPath += directory; // Construye el camino hasta el segmento actual
+      if (!SD.exists(fullPath.c_str())) {  // Verifica si el directorio existe
+        if (!SD.mkdir(fullPath.c_str())) { // Intenta crearlo si no existe
+          Serial.print("Error al crear: ");
+          Serial.println(fullPath);
+          success = false;
+        }
+      }
+      directory = ""; // Reinicia para el siguiente segmento
+    } else {
+      directory += c;
+    }
+  }
+
+  return success;
+}
+
+
+
 
 #endif //sdFun_H

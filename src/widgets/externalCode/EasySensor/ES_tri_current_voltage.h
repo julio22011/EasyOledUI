@@ -15,7 +15,7 @@
 #define factorSensorCorriente 30.0
 #define factorAmplifidorCorriente 10.0   // 10
 
-#define factorSensorVoltaje 1.0
+#define factorSensorVoltaje 2862.267   // antes era 1
 #define factorAmplifidorVoltaje 10.0
 
 #define valorMinLecturaRMS_VI 0.01
@@ -139,10 +139,14 @@ public:
 
 // Proceso de inicialización de los sensores
 bool ES_tri_current_voltage_sensor::begin() {   // overrride
+    // Factores de ajuste para los sensores 
+    float fatoresSensorCorriente[] = {30.0, 30.0, 30.0};  // Factores de ajuste para los sensores de voltaje
+    float fatoresSensorVoltajes[] = {7717.71, 8544.80, 20748.48};  // Factores de ajuste para los sensores de voltaje
+
     // Inicializa cada canal
     for(int i = 0; i < n_chanels; i++){
-        if(i<3) chanels[i].initChanel(factorSensorCorriente, factorAmplifidorCorriente, valorMinLecturaRMS_VI);  // Ejecuta el pinMode de cada canal y asigna factores (corriente)
-        else    chanels[i].initChanel(factorSensorVoltaje, factorAmplifidorVoltaje, valorMinLecturaRMS_VI);   // Ejecuta el pinMode de cada canal y asigna factores (voltaje)
+        if(i<3) chanels[i].initChanel(fatoresSensorCorriente[i], factorAmplifidorCorriente, valorMinLecturaRMS_VI);  // Ejecuta el pinMode de cada canal y asigna factores (corriente)
+        else    chanels[i].initChanel(fatoresSensorVoltajes[i-3], factorAmplifidorVoltaje, valorMinLecturaRMS_VI);   // Ejecuta el pinMode de cada canal y asigna factores (voltaje)
     }
     sensorStatus = true;     // variable que esta en la clase madre EasySensor
     return sensorStatus;
@@ -156,7 +160,13 @@ bool ES_tri_current_voltage_sensor::read() {   // overrride
     this->freq = calcFreq();
 
     // Agregar a sensorData los valores de currents, voltages y freq (este orden es importante al consultar los valores)
-    float data[7] = {this->currents[0], this->currents[1], this->currents[2], this->voltages[0], this->voltages[1], this->voltages[2], this->freq};
+    float * data = new float[7];
+    for(int i = 0; i < 3; i++){
+        data[i] = this->currents[i];
+        data[i+3] = this->voltages[i];
+    }
+    data[6] = this->freq;
+    //data[] = {(float) this->currents[0], (float) this->currents[1], (float) this->currents[2], (float) this->voltages[0], (float) this->voltages[1], (float) this->voltages[2], (float) this->freq};
 
     Serial.print("Frecuencia: ");
     Serial.println(freq);
@@ -201,7 +211,7 @@ float * ES_tri_current_voltage_sensor::calcEquivalentVoltages(float * voltageVal
 // Calcula la frecuencia de la señal (Pendiente: actualizar metodos)
 float ES_tri_current_voltage_sensor::calcFreq(int NUM_MUESTRAS){
     // Utilizar registros de tiempo para calcular la frecuencia de voltages
-    int ch = 0;  // Canal leido para calcular la frecuencia
+    int ch = 5;  // Canal leido para calcular la frecuencia // Antes era 0 para usar el primer canal
     unsigned long periodSum = 0;
     int zeroCrossings = 0;
     float freq_offset = chanels[ch].getOffset();

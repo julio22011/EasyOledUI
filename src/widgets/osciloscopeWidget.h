@@ -30,6 +30,7 @@ protected:
     EasySensor * sensors;  // Sensor asociado al widget
     char * letters;  // Letra que identifica cada medición
     int currentChanel = 0;  // Entrada actual
+    bool registerOK = false;
 
     // Variables ajustables de sensor
     //float factorSensor = FirstFactorSensor;         // Factor del sensor (ajustable)
@@ -53,10 +54,12 @@ private:
     void measureData();  // Proceso para medir los datos
     void drawBackground(char * variableName, float variableValue, char * variableUnits,  float variableValue2 = 0.0, char * variableUnits2 = NULL);  // Agregar lineas de fondo
     void drawMesurement();  // Dibujar medición
-
 public:
     OsciloscopeWidget(Adafruit_SSD1306 * display, botones * botonesUI_w, EasySensor * sensors_w, char * inLetters): Widget(display, botonesUI_w), sensors(sensors_w), letters(inLetters) {};
     //~OsciloscopeWidget(); // genera error en la compilación
+
+    // Para mostrar senales en la pantalla
+    void setRegisterOK(bool value){registerOK = value;};  // Indicar si el registro de datos está OK
 
     //void draw();
     char update();
@@ -140,6 +143,9 @@ void OsciloscopeWidget::drawBackground(char * variableName, float variableValue,
     display->setCursor(4, 57);     // Posición del cursor en la esquina superior izquierda
     display->print("Canal:");
     display->print(this->currentChanel);
+
+    // Indicar el estado del registro de datos
+    if(registerOK) display->print("   SD");
 
     // Dibujar frecuencia, canal actual y otros datos
     // ------------------------------------------

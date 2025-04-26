@@ -47,12 +47,12 @@ class botones{
 
   // Funciones
   //*************************
-  bool iniciar(int pin, uint8_t tipo, int *limitesDeLectura, int pinMotorVib);
+  bool iniciar(int pin, uint8_t tipo, int *limitesDeLectura, int *pinMotorVib);
   char botonPresionado();
 };
 
 // Ingresa a la configuracion los limites de lectura
-bool botones::iniciar(int pin = 36, uint8_t tipo = 0, int *limitesDeLectura = NULL, int pinMotorVib = NULL){  // limites: no boton, e inferior y superior de 1,2,3 y4
+bool botones::iniciar(int pin = 36, uint8_t tipo = 0, int *limitesDeLectura = nullptr, int *pinMotorVib = nullptr){  // limites: no boton, e inferior y superior de 1,2,3 y4
 
   pinMode(pin, INPUT); // poner el pin como entrada
 
@@ -75,8 +75,8 @@ bool botones::iniciar(int pin = 36, uint8_t tipo = 0, int *limitesDeLectura = NU
   limiteSupIzq = limitesDeLectura[7];
   limiteInfIzq = limitesDeLectura[8];
 
-  if(pinMotorVib != NULL){
-    pinMotorVibracion = pinMotorVib;
+  if(pinMotorVib != nullptr){
+    pinMotorVibracion = *pinMotorVib;
     pinMode(pinMotorVibracion, OUTPUT);
     activarVibracion = true;
   }

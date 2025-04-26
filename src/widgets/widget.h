@@ -22,7 +22,7 @@ public:
         //------------------------------------------
         char botonPresionado = botonesUI_w->botonPresionado();  
 
-        // Verificar si el usuario quiere salir del osciloscopio      
+        // Verificar si el usuario quiere salir del widget      
         if(botonPresionado == '4') {
             desactivate();
             display->clearDisplay();

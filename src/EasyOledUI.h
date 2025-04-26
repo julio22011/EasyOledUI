@@ -30,6 +30,7 @@
 
 // Activar/desacitvar widgets
 #define EasyOledUI_osciloscopeWidget  // activar el widget de osciloscopio
+//#define EasyOledUI_scheduleWidget    // activar el widget de programacion
 //...
 
 //=====================================================================
@@ -60,6 +61,10 @@ bool callBackEjecutarAccion(int menuActual, int opcionActual){
 
 #ifdef EasyOledUI_osciloscopeWidget
   #include "widgets/osciloscopeWidget.h"  // Matriz con la imagen del logo y el tamaño
+#endif
+
+#ifdef EasyOledUI_scheduleWidget
+  #include "widgets/scheduleWidget.h"  // Matriz con la imagen del logo y el tamaño
 #endif
 
 //=====================================================================
@@ -98,6 +103,8 @@ class UI_OLED {
   //bool mostrarVoltajesSensores(sensor *sensores, int cantSensores);
   bool mostrarMensaje(String mensaje, int duracion);
   bool callBackEjecutarAccionMenu(int menuActual, int opcionActual);
+  bool programarMensajeEsporadico(String mensaje);
+  //bool addWidget(Widget * widgetPorAgregar);
   bool update();
 
   void testdrawbitmap(void);
@@ -220,6 +227,23 @@ bool UI_OLED::callBackEjecutarAccionMenu(int menuActual, int opcionActual){
   Serial.println("Error O1: No hay accion asociada a la opcion seleccionada.");
   return false;
 }
+
+bool UI_OLED::programarMensajeEsporadico(String mensaje){
+  mensajeEsporadico = mensaje;
+  mensajePendiente = true;
+}
+
+/*
+bool UI_OLED::addWidget(Widget * widgetPorAgregar){
+  // Agregar un widget a la lista de widgets
+  if(widgets == NULL){
+    widgets = new Widget[numeroWidgets];
+  }
+  widgets[numeroWidgets] = *widgetPorAgregar;
+  numeroWidgets++;
+  return true;
+}
+*/
 
 // if algo cambia, actualizar pantalla
 bool IRAM_ATTR UI_OLED::update(){
