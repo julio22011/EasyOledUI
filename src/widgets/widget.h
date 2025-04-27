@@ -2,6 +2,8 @@
 #define WIDGET_H
 
 
+#include <vector>
+
 class Widget{
 protected:
     Adafruit_SSD1306 * display; // nombre del widget

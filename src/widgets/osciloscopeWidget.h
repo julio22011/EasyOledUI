@@ -66,7 +66,7 @@ public:
 };
 
 
-char OsciloscopeWidget::update() {
+char OsciloscopeWidget::update(){
     // Proceso de actualización de datos
     if(active){
         display->clearDisplay();                   // Borrar la pantalla antes de redibujar el buffer

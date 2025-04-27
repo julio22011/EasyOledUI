@@ -31,13 +31,14 @@
 // Activar/desacitvar widgets
 #define maxQuatityWidgets          10 // Cantidad maxima de widgets que se pueden agregar
 #define EasyOledUI_osciloscopeWidget  // activar el widget de osciloscopio
-//#define EasyOledUI_scheduleWidget   // activar el widget de programacion
+#define EasyOledUI_scheduleWidget   // activar el widget de programacion
 //...
 
 //=====================================================================
 
 #include <Adafruit_SSD1306.h>   // se requiere la clase de la pantalla
 #include <Wire.h>
+#include <vector>           // se requiere la clase vector para almacenar los widgets
 
 // Otras clases asociadas
 #include "claseMenu.h"          // se requiere la clase menu para que esta clase funcione
@@ -89,9 +90,10 @@ class UI_OLED {
   bool cambioPendiente = true;              // Permite indicar desde el exterior de la clase si se debe refrescar los menus
   bool mensajePendiente = false;            // Permite indicar desde el exterior si de debe mostrar un mensaje
   String mensajeEsporadico = "None";
-  Widget * widgets = nullptr;                          // Puntero hacia los objetos de tipo widget
+
+  // For the Widgets
   int numeroWidgets = 0;                     // Cantidad de widgets existentes
-  Widget * widgetIngresando = nullptr; // Puntero hacia el widget que se está ingresando
+  std::vector<Widget*>* widgetsVector = new std::vector<Widget*>(); // Apunta a la lista
 
   // Funciones
   bool mostrarMenuEnOLED(menu menuPorMostrar);
@@ -237,19 +239,12 @@ bool UI_OLED::programarMensajeEsporadico(String mensaje){
 
 
 bool UI_OLED::addWidget(Widget * widgetPorAgregar){
-  // Ver si se puede agregar otro Widget
-  if(numeroWidgets > maxQuatityWidgets-1){
-    Serial.println("Error: No se pueden agregar mas widgets.");
-    return false;
-  }
 
   // Agregar un widget a la lista de widgets
-  if(widgets == nullptr){
-    widgets = new Widget[maxQuatityWidgets]; // Crear el array de widgets
+  if (widgetsVector == nullptr) {
+    widgetsVector = new std::vector<Widget*>();
   }
-  widgets[numeroWidgets] = *widgetPorAgregar;
-
-  // Adelantar la cuenta
+  widgetsVector->push_back(widgetPorAgregar);
   numeroWidgets++;
 
   return true;
@@ -290,8 +285,8 @@ bool IRAM_ATTR UI_OLED::update(){
 
   // Actualizar el widget activo
   for(int i=0; i < numeroWidgets; i++){
-    while(widgets[i].getStatus()){
-      widgets[i].update();
+    while((*widgetsVector)[i]->getStatus()){
+      (*widgetsVector)[i]->update();
       cambioPendiente = true;  // Volver a actualizar la pantalla con el menu correspondiente al salir del widget
     }
   }

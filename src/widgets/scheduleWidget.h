@@ -85,10 +85,10 @@ char ScheduleWidget::update(){
 
         draw();                                    // aplicar acciones de dibujo si son requeridas (envia el buffer al display)
         char controles = controls();               // aplicar acciones de control si son requeridas y retorna char de resultado
-        if(controles == '1' && currentChanel < n_osc_chanels-1){
+        if(controles == '1'){
             //
         }
-        else if (controles == '2' && currentChanel > 0){
+        else if (controles == '2'){
             //
         }
 
