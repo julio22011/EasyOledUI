@@ -55,13 +55,17 @@ protected:
     String currentFileName;
     bool sd_ok = true;       // Indica si la SD está lista para guardar datos
     EasySensor * sensors;    // Sensor asociado al registro
-    char * oldName = "Undefined";          // Nombre del archivo anterior
+    char oldName[50] = "Undefined";          // Nombre del archivo anterior
 public:
     EasyDataRegister(EasySensor * sensors_u, int type = undefined_file, int ID = 0):registerFileType(type),sensors(sensors_u),id(ID){
         this->sd_ok = mountSD(); // Inicializa la SD para guardar los datos. Nota: El serial quiza aun no esta disponible en este momento, por lo que no muestran mensajes
         mySerial.begin(115200, SERIAL_8N1, 16, 17);  // Configura UART2 con RX=16, TX=17
     };
     ~EasyDataRegister(){};
+
+    void saveOldName(const char* cstr) {
+        strcpy(this->oldName, cstr); // ¡Copiado correctamente!
+    }
 
     // Crear archivo nuevo para comenza a guardar datos si no existe aun
     bool createNewFile(){
@@ -208,7 +212,8 @@ char * EasyDataRegister::genFileName(){
     String fileName = rtc.getTime("%Y-%m-%d") + "@" + file_type[registerFileType] + ".csv";  //-%H-%M-%S
     char * cstr = new char[fileName.length() + 1];
     strcpy(cstr, fileName.c_str());
-    this->oldName = cstr;  // Guarda el nombre del archivo para comparar luego
+    saveOldName(cstr);  // Guarda el nombre del archivo para comparar luego
+    //this->oldName = cstr;  // Guarda el nombre del archivo para comparar luego (no es permitido, da error de acceso de memoria)
     return cstr;
 }
 

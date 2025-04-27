@@ -52,7 +52,7 @@ protected:
     float outputValue2 = 0.0;
 private:
     void measureData();  // Proceso para medir los datos
-    void drawBackground(char * variableName, float variableValue, char * variableUnits,  float variableValue2 = 0.0, char * variableUnits2 = NULL);  // Agregar lineas de fondo
+    void drawBackground(const char * variableName, float variableValue, const char * variableUnits,  float variableValue2 = 0.0, const char * variableUnits2 = NULL);  // Agregar lineas de fondo
     void drawMesurement();  // Dibujar medición
 public:
     OsciloscopeWidget(Adafruit_SSD1306 * display, botones * botonesUI_w, EasySensor * sensors_w, char * inLetters): Widget(display, botonesUI_w), sensors(sensors_w), letters(inLetters) {};
@@ -119,7 +119,7 @@ void OsciloscopeWidget::measureData(){
 }
 
 // Agregar lineas de fondo
-void OsciloscopeWidget::drawBackground(char * variableName, float variableValue, char * variableUnits, float variableValue2, char * variableUnits2){
+void OsciloscopeWidget::drawBackground(const char * variableName, float variableValue, const char * variableUnits, float variableValue2, const char * variableUnits2){
     // Agregar datos en pantalla
     // ------------------------------------------
     display->setTextSize(1);      // Tamaño del texto (1 es el más pequeño, se puede aumentar)
