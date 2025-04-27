@@ -29,8 +29,9 @@
 #define duracionMensajeMS 1000 // Tiempo de espera para mostrar mensajes de error en milisegundos
 
 // Activar/desacitvar widgets
+#define maxQuatityWidgets          10 // Cantidad maxima de widgets que se pueden agregar
 #define EasyOledUI_osciloscopeWidget  // activar el widget de osciloscopio
-//#define EasyOledUI_scheduleWidget    // activar el widget de programacion
+//#define EasyOledUI_scheduleWidget   // activar el widget de programacion
 //...
 
 //=====================================================================
@@ -88,8 +89,9 @@ class UI_OLED {
   bool cambioPendiente = true;              // Permite indicar desde el exterior de la clase si se debe refrescar los menus
   bool mensajePendiente = false;            // Permite indicar desde el exterior si de debe mostrar un mensaje
   String mensajeEsporadico = "None";
-  Widget * widgets = NULL;                          // Puntero hacia los objetos de tipo widget
+  Widget * widgets = nullptr;                          // Puntero hacia los objetos de tipo widget
   int numeroWidgets = 0;                     // Cantidad de widgets existentes
+  Widget * widgetIngresando = nullptr; // Puntero hacia el widget que se está ingresando
 
   // Funciones
   bool mostrarMenuEnOLED(menu menuPorMostrar);
@@ -104,7 +106,7 @@ class UI_OLED {
   bool mostrarMensaje(String mensaje, int duracion);
   bool callBackEjecutarAccionMenu(int menuActual, int opcionActual);
   bool programarMensajeEsporadico(String mensaje);
-  //bool addWidget(Widget * widgetPorAgregar);
+  bool addWidget(Widget * widgetPorAgregar);
   bool update();
 
   void testdrawbitmap(void);
@@ -233,17 +235,26 @@ bool UI_OLED::programarMensajeEsporadico(String mensaje){
   mensajePendiente = true;
 }
 
-/*
+
 bool UI_OLED::addWidget(Widget * widgetPorAgregar){
+  // Ver si se puede agregar otro Widget
+  if(numeroWidgets > maxQuatityWidgets-1){
+    Serial.println("Error: No se pueden agregar mas widgets.");
+    return false;
+  }
+
   // Agregar un widget a la lista de widgets
-  if(widgets == NULL){
-    widgets = new Widget[numeroWidgets];
+  if(widgets == nullptr){
+    widgets = new Widget[maxQuatityWidgets]; // Crear el array de widgets
   }
   widgets[numeroWidgets] = *widgetPorAgregar;
+
+  // Adelantar la cuenta
   numeroWidgets++;
+
   return true;
 }
-*/
+
 
 // if algo cambia, actualizar pantalla
 bool IRAM_ATTR UI_OLED::update(){

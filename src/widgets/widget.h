@@ -10,6 +10,8 @@ protected:
     bool active = false; // Indica si el widget está activo
     bool drawingRequired = false; // Indica si se requiere dibujar el widget
 public:
+    // Constructor
+    Widget(){};
     Widget(Adafruit_SSD1306 * display, botones * botonesUI_w) : display(display), botonesUI_w(botonesUI_w) {};
     //virtual ~Widget(){}; // genera error en la compilación
 
