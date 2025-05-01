@@ -3,9 +3,34 @@
 #ifndef Sch_WIDGET_H
 #define Sch_WIDGET_H
 
+#include <Preferences.h>
+#include <vector>
+
+enum ScheduleAction {
+    INCREASE_HOUR_ON,
+    INCREASE_HOUR_OFF,
+    DECREASE_HOUR_ON,
+    DECREASE_HOUR_OFF,
+    INCREASE_MINUTE_ON,
+    INCREASE_MINUTE_OFF,
+    DECREASE_MINUTE_ON,
+    DECREASE_MINUTE_OFF,
+    TOGGLE_AM_PM_ON,
+    TOGGLE_AM_PM_OFF,
+    ADD_SCHEDULE,
+    LOAD_SCHEDULE,
+    SAVE_SCHEDULE,
+    DELETE_SCHEDULE
+};
+
 
 class ScheduleWidget: public Widget{
-    
+    // Widget de programación
+    // Permite programar dos horarios para encender y apagar un dispositivo
+    // Se puede guardar en la memoria permanente
+    // Se puede cargar desde la memoria permanente
+    // Se puede eliminar desde la memoria permanente
+
 protected:
     int hour1 = 0;
     int minute1 = 0;
@@ -14,18 +39,38 @@ protected:
     int am_pm1 = 0; // 0 = AM, 1 = PM
     int am_pm2 = 0; // 0 = AM, 1 = PM
 
+    bool pendingDrawingChanges = true; // Indica si se requiere dibujar el widget
+
+    // Estructura para almacenar los horarios
+    struct Schedule {
+        int hour;
+        int minute;
+        int am_pm; // 0 = AM, 1 = PM
+    };
+    std::vector<Schedule> schedules; // Vector para almacenar los horarios
+
+
+
 private:
-    void drawShedule();
+    void drawSchedule();
     void saveSchedule();
+    void loadInClassMemory(int scheduleDuplexIndex);
     void loadSchedule();
     void deleteSchedule();
+    void addSchedule();
+    void changeCurrentSchedule(int schNumber);
 public:
-    ScheduleWidget(Adafruit_SSD1306 * display, botones * botonesUI_w) : Widget(display, botonesUI_w) {};
+    ScheduleWidget(Adafruit_SSD1306 * display, botones * botonesUI_w) : Widget(display, botonesUI_w) {
+        // Load the saved shcedule from permanent memory
+        this->loadSchedule();
+    };
+    void Action(ScheduleAction act);
     char update();
 };
 
 
-void ScheduleWidget::drawShedule(){
+void ScheduleWidget::drawSchedule(){
+
     // Dibujar la pantalla de programación
     display->clearDisplay();
     display->setTextSize(1);
@@ -61,41 +106,299 @@ void ScheduleWidget::drawShedule(){
     }
     
     // Actualizar pantalla
-    display->display();
+    //display->display();
 }
 
+void ScheduleWidget::addSchedule(){
+    // Agregar un nuevo horario al vector
+    Schedule scheduleOn;  // Horario de encendido
+    Schedule scheduleOff; // Horario de apagado
+
+    // Asignar valores a los horarios
+    scheduleOn.hour = hour1;
+    scheduleOn.minute = minute1;
+    scheduleOn.am_pm = am_pm1;
+
+    scheduleOff.hour = hour2;
+    scheduleOff.minute = minute2;
+    scheduleOff.am_pm = am_pm2;
+
+    // Agregar ambos horarios al vector
+    schedules.push_back(scheduleOn);
+    schedules.push_back(scheduleOff);
+
+    // Guardar el horario en la memoria permanente
+    saveSchedule();
+}
+
+void ScheduleWidget::changeCurrentSchedule(int schNumber){
+    // Cambiar el horario actual a editar
+    if(schNumber < 0 || schNumber >= schedules.size() / 2) {
+        Serial.println("Error: Invalid schedule index or no schedules added yet.");
+    } else{
+        schedules[schNumber * 2].hour = hour1;
+        schedules[schNumber * 2].minute = minute1;
+        schedules[schNumber * 2].am_pm = am_pm1;
+        schedules[schNumber * 2 + 1].hour = hour2;
+        schedules[schNumber * 2 + 1].minute = minute2;
+        schedules[schNumber * 2 + 1].am_pm = am_pm2;
+    }
+    pendingDrawingChanges = true; // Indicar que se requiere redibujar
+}
+
+
 void ScheduleWidget::saveSchedule(){
-    //
+    // Guardar en la memoria permanente el horario digitado
+    Preferences preferences;
+    if (preferences.begin("schedule", false)) {
+        int scheduleCount = schedules.size() / 2; // Cada par representa un encendido y apagado
+        preferences.putInt("scheduleCount", scheduleCount);
+        for (int i = 0; i < scheduleCount; ++i) {
+            // Guardar horario de encendido
+            preferences.putInt(("on_hour" + String(i)).c_str(), schedules[i * 2].hour);
+            preferences.putInt(("on_minute" + String(i)).c_str(), schedules[i * 2].minute);
+            preferences.putInt(("on_am_pm" + String(i)).c_str(), schedules[i * 2].am_pm);
+
+            // Guardar horario de apagado
+            preferences.putInt(("off_hour" + String(i)).c_str(), schedules[i * 2 + 1].hour);
+            preferences.putInt(("off_minute" + String(i)).c_str(), schedules[i * 2 + 1].minute);
+            preferences.putInt(("off_am_pm" + String(i)).c_str(), schedules[i * 2 + 1].am_pm);
+        }
+        preferences.end();
+        Serial.println("Schedules saved:");
+        for (int i = 0; i < scheduleCount; ++i) {
+            Serial.print("Schedule ");
+            Serial.print(i + 1);
+            Serial.print(" ON: ");
+            Serial.print(schedules[i * 2].hour);
+            Serial.print(":");
+            Serial.print(schedules[i * 2].minute);
+            Serial.print(" AM/PM: ");
+            Serial.println(schedules[i * 2].am_pm);
+
+            Serial.print("Schedule ");
+            Serial.print(i + 1);
+            Serial.print(" OFF: ");
+            Serial.print(schedules[i * 2 + 1].hour);
+            Serial.print(":");
+            Serial.print(schedules[i * 2 + 1].minute);
+            Serial.print(" AM/PM: ");
+            Serial.println(schedules[i * 2 + 1].am_pm);
+        }
+    } else {
+        Serial.println("Failed to initialize Preferences.");
+    }
+    preferences.end();
+    // Mostrar mensaje de guardado
+    display->clearDisplay();
+    display->setTextSize(1);
+    display->setTextColor(SSD1306_WHITE);
+    display->setCursor(0, 0);
+    display->println("Schedule saved");
+    display->display();
+    delay(2000); // Esperar 2 segundos para mostrar el mensaje
+    display->clearDisplay();
+}
+
+void ScheduleWidget::loadInClassMemory(int scheduleDuplexIndex = 0){
+    // Poner en memoria de la calse el horario seleccionado
+    if(scheduleDuplexIndex < 0 || scheduleDuplexIndex >= schedules.size() / 2) {
+        Serial.println("Error: Invalid schedule index or no schedules added yet.");
+    } else{
+        hour1 = schedules[scheduleDuplexIndex * 2].hour;
+        minute1 = schedules[scheduleDuplexIndex * 2].minute;
+        am_pm1 = schedules[scheduleDuplexIndex * 2].am_pm;
+        hour2 = schedules[scheduleDuplexIndex * 2 + 1].hour;
+        minute2 = schedules[scheduleDuplexIndex * 2 + 1].minute;
+        am_pm2 = schedules[scheduleDuplexIndex * 2 + 1].am_pm;
+
+    }
+
 }
 
 void ScheduleWidget::loadSchedule(){
-    //
+    // Cargar los datos de la memoria permanente
+    Preferences preferences;
+    preferences.begin("schedule", true);
+    int scheduleCount = preferences.getInt("scheduleCount", 0);
+    schedules.clear(); // Limpiar el vector de horarios
+
+    // Retornar si no hay horarios guardados y cargar valores por defecto
+    if (scheduleCount == 0) {
+        Serial.println("No schedules found.");
+        preferences.end();
+
+        this->Action(ADD_SCHEDULE);  // Cambiar el canal de medición
+        Serial.println("Default schedule loaded to permanent memory.");
+        return;
+    }
+    for (int i = 0; i < scheduleCount; ++i) {
+        Schedule scheduleOn;  // Horario de encendido
+        Schedule scheduleOff; // Horario de apagado
+
+        // Cargar horario de encendido
+        scheduleOn.hour = preferences.getInt(("on_hour" + String(i)).c_str(), 0);
+        scheduleOn.minute = preferences.getInt(("on_minute" + String(i)).c_str(), 0);
+        scheduleOn.am_pm = preferences.getInt(("on_am_pm" + String(i)).c_str(), 0);
+
+        // Cargar horario de apagado
+        scheduleOff.hour = preferences.getInt(("off_hour" + String(i)).c_str(), 0);
+        scheduleOff.minute = preferences.getInt(("off_minute" + String(i)).c_str(), 0);
+        scheduleOff.am_pm = preferences.getInt(("off_am_pm" + String(i)).c_str(), 0);
+
+        // Agregar ambos horarios al vector
+        schedules.push_back(scheduleOn);
+        schedules.push_back(scheduleOff);
+    }
+    preferences.end();
+
+    // Show the loaded schedules
+    Serial.println("Schedules loaded:");
+    for (int i = 0; i < schedules.size(); i += 2) {
+        Serial.print("Schedule ");
+        Serial.print((i / 2) + 1);
+        Serial.print(" ON: ");
+        Serial.print(schedules[i].hour);
+        Serial.print(":");
+        Serial.print(schedules[i].minute);
+        Serial.print(" AM/PM: ");
+        Serial.println(schedules[i].am_pm);
+
+        Serial.print("Schedule ");
+        Serial.print((i / 2) + 1);
+        Serial.print(" OFF: ");
+        Serial.print(schedules[i + 1].hour);
+        Serial.print(":");
+        Serial.print(schedules[i + 1].minute);
+        Serial.print(" AM/PM: ");
+        Serial.println(schedules[i + 1].am_pm);
+    }
+
+    // Cargar el primer horario en la memoria de la clase
+    loadInClassMemory(0);
 }
 
 void ScheduleWidget::deleteSchedule(){
-    //
+    // Eliminar los horarios de la memoria permanente
+    Preferences preferences;
+    preferences.begin("schedule", false);
+    int scheduleCount = preferences.getInt("scheduleCount", 0);
+    for (int i = 0; i < scheduleCount; ++i) {
+        preferences.remove(("on_hour" + String(i)).c_str());
+        preferences.remove(("on_minute" + String(i)).c_str());
+        preferences.remove(("on_am_pm" + String(i)).c_str());
+
+        preferences.remove(("off_hour" + String(i)).c_str());
+        preferences.remove(("off_minute" + String(i)).c_str());
+        preferences.remove(("off_am_pm" + String(i)).c_str());
+    }
+    preferences.remove("scheduleCount");
+    preferences.end();
+    Serial.println("Schedules deleted");
+}
+
+void ScheduleWidget::Action(ScheduleAction act){
+    // Incrementar el horario de encendido y apagado
+    if(act == INCREASE_HOUR_ON){
+        if (this->hour1 == 23) {
+            this->hour1 = 0;
+        } else {
+            this->hour1++;
+        }
+    } else if(act == INCREASE_HOUR_OFF){
+        if (this->hour2 == 23) {
+            this->hour2 = 0;
+        } else {
+            this->hour2++;
+        }
+    } else if(act == DECREASE_HOUR_ON){
+        if (this->hour1 == 0) {
+            this->hour1 = 23;
+        } else {
+            this->hour1--;
+        }
+    } else if(act == DECREASE_HOUR_OFF){
+        if (this->hour2 == 0) {
+            this->hour2 = 23;
+        } else {
+            this->hour2--;
+        }
+    } else if(act == INCREASE_MINUTE_ON){
+        if (this->minute1 == 59) {
+            this->minute1 = 0;
+        } else {
+            this->minute1++;
+        }
+    } else if(act == INCREASE_MINUTE_OFF){
+        if (this->minute2 == 59) {
+            this->minute2 = 0;
+        } else {
+            this->minute2++;
+        }
+    } else if(act == DECREASE_MINUTE_ON){
+        if (this->minute1 == 0) {
+            this->minute1 = 59;
+        } else {
+            this->minute1--;
+        }
+    } else if(act == DECREASE_MINUTE_OFF){
+        if (this->minute2 == 0) {
+            this->minute2 = 59;
+        } else {
+            this->minute2--;
+        }
+    } else if(act == TOGGLE_AM_PM_ON){
+        this->am_pm1 = !this->am_pm1; // Cambiar AM/PM
+    } else if(act == TOGGLE_AM_PM_OFF){
+        this->am_pm2 = !this->am_pm2; // Cambiar AM/PM
+    }
+    else if(act == ADD_SCHEDULE){
+        this->addSchedule(); // Guardar el horario en la memoria permanente
+    }
+    else if(act == LOAD_SCHEDULE){
+        this->loadSchedule(); // Cargar el horario de la memoria permanente
+    }
+    else if(act == SAVE_SCHEDULE){
+        this->saveSchedule(); // Guardar el horario en la memoria permanente
+    }
+    else if(act == DELETE_SCHEDULE){
+        this->deleteSchedule(); // Eliminar el horario de la memoria permanente
+    }
+    else{
+        Serial.println("Error: Invalid action");
+    }
 }
 
 
 char ScheduleWidget::update(){
         // Proceso de actualización de datos
     if(active){
-        display->clearDisplay();                   // Borrar la pantalla antes de redibujar el buffer
-        drawShedule();                             // Proceso para dibujar la programación
+        if(pendingDrawingChanges){
+            display->clearDisplay();                   // Borrar la pantalla antes de redibujar el buffer
+            drawSchedule();                             // Proceso para dibujar la programación
+            draw();
+            pendingDrawingChanges = false; // Resetear el flag de dibujo
+        }
 
-        draw();                                    // aplicar acciones de dibujo si son requeridas (envia el buffer al display)
         char controles = controls();               // aplicar acciones de control si son requeridas y retorna char de resultado
         if(controles == '1'){
-            //
+            this->Action(INCREASE_HOUR_ON);  // Cambiar el canal de medición
+            changeCurrentSchedule(0); // Cambiar el horario actual a editar
         }
         else if (controles == '2'){
-            //
+            this->Action(DECREASE_HOUR_ON);  // Cambiar el canal de medición
+            changeCurrentSchedule(0); // Cambiar el horario actual a editar
+        }
+        else if (controles == '3'){
+            this->Action(DELETE_SCHEDULE);  // Cambiar el canal de medición
+        }
+        else if (controles == '4'){
+            this->Action(SAVE_SCHEDULE);  // Cambiar el canal de medición
         }
 
         return controls();                         // aplicar acciones de control si son requeridas y retorna char de resultado
     }
 }
-
 
 
 #endif
