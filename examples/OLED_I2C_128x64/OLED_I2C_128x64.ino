@@ -1,4 +1,4 @@
-// EasyOledUI. Version: 0.9.0
+// EasyOledUI. Version: 0.9.5
 // Esta libreria solamente funciona con la version 1.0.6 del paquete para la ESP32.
 // Aun se debe identificar por que razon falla con las nuevas versiones.
 //-----------------------------------------------------------------------
@@ -39,6 +39,7 @@ int limitesDeLect[] = {100,4095,3900,3000,2700,2000,1600,1000,600};  // limite d
 
 // Creación de las instancias
 //-----------------------------------------------------------------------
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 UI_OLED ui;            // crear objeto de UI
 menu menuPrincipal;    // Menu inicial de la UI
 menu menuSecundario;   // Menu secuandario de la UI
@@ -84,8 +85,8 @@ void loop() {
 void crearUI(){
   // Asociar la pantalla a la UI y inicializar:
   //---------------------------------------------------------------------------------------
-  Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-  ui.asociarPantalla(display);            // Asociar la pantalla al UI
+  //Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);  // Cambio: Se traslado a variable global
+  ui.asociarPantalla(&display);            // Asociar la pantalla al UI
   ui.setupPantallaOled(I2C_SDA, I2C_SCL); // Iniciar la ui junto con la pantalla: Se indican los pines de I2C
   // Nota: 
   //      Si la pantalla es por SPI, se debe cambiar ui.setupPantallaOled() por el proceso de inicio correspondiente. 
@@ -150,7 +151,7 @@ void crearUI(){
   // Configurar botones:
   // ---------------------------------------------------------------------------------------
   botones.iniciar(pinDeLosBotones, tipoBotonesDisp, limitesDeLect, pinTransistor); // int pin = 36, uint8_t tipo = 0, int *limitesDeLectura = NULL
-  ui.asociarBotones(botones);
+  ui.asociarBotones(&botones);
   //attachInterrupt(digitalPinToInterrupt(ui.botonesUI.pinBotones), handleInterrupt, CHANGE); // agregar una rutina de interrupcion a los botones. No funciono
 
   // Mostrar mensaje de bienvenida
@@ -200,11 +201,11 @@ void AccM02(){
 }
 
 void testdrawrect(void) {
-  ui.display.clearDisplay();
+  display.clearDisplay();
 
-  for(int16_t i=0; i<ui.display.height()/2; i+=2) {
-    ui.display.drawRect(i, i, ui.display.width()-2*i, ui.display.height()-2*i, SSD1306_WHITE);
-    ui.display.display(); // Update screen with each newly-drawn rectangle
+  for(int16_t i=0; i<display.height()/2; i+=2) {
+    display.drawRect(i, i, display.width()-2*i, display.height()-2*i, SSD1306_WHITE);
+    display.display(); // Update screen with each newly-drawn rectangle
     vTaskDelay(pdMS_TO_TICKS(10));
   }
   //vTaskDelay(pdMS_TO_TICKS(1000));
@@ -213,7 +214,7 @@ void testdrawrect(void) {
 bool estadoInvversionPantalla = false;
 void AccM03(){
   estadoInvversionPantalla = !estadoInvversionPantalla;
-  ui.display.invertDisplay(estadoInvversionPantalla);
+  display.invertDisplay(estadoInvversionPantalla);
 }
 
 // Menu secundario M1
