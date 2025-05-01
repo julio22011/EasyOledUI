@@ -1,3 +1,7 @@
+
+#ifndef EasyElectricCalc_h
+#define EasyElectricCalc_h
+
 // Ajustes de funciones
 //--------------------------------------------------------------------------
 
@@ -22,7 +26,7 @@ float factorAmplificador = 10;     // Ajusta el valor según la amplificación d
 float medirValorRMS(int pinSensor, float * voltajes, float &offset, float factorSensor = 30.0, float valorMinLecturaRMS = 0.25, int NUM_MUESTRAS = 500, int TIEMPO_LECTURA = 100, int esperaUs = 100){
     long tiempoInicial = millis();
 
-    // Paso 1: Leer y guardar voltajes durante un tiempo específico
+    // Paso 1: Leer y guardar voltajes durante un tiempo específico 
     int i = 0;
     while (millis() - tiempoInicial < TIEMPO_LECTURA && i < NUM_MUESTRAS) {
         voltajes[i] = analogRead(pinSensor) * (3.4 / 4096.0); // Conversión a voltaje
@@ -41,7 +45,7 @@ float medirValorRMS(int pinSensor, float * voltajes, float &offset, float factor
     float sumatoriaCuadrados = 0;
     for (int j = 0; j < i; j++) {
         float voltajeCorregido = voltajes[j] - offset;
-        float corriente = voltajeCorregido * factorSensor; // Convertir voltaje a corriente
+        float corriente = voltajeCorregido * factorSensor; // Convertir voltaje a corriente: error
         sumatoriaCuadrados += sq(corriente);
     }
     float valorRMS = sqrt(sumatoriaCuadrados / i); // Calcular RMS
@@ -64,4 +68,5 @@ float calcularFrecuencia(float * voltajes, float offset, float period){
 }
 
 
+#endif // EasyElectricCalc_h
 

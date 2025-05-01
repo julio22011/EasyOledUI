@@ -9,3 +9,7 @@ Essential hardware:
 Other:
 - Buttons and resistors for the controls.
 - Buzzer.
+
+Documents:
+- Basic Guide (English): https://www.researchgate.net/publication/388800311_Basic_Guide_for_Using_the_EasyOledUI_Library
+- Basic Guide (Spanish): https://www.researchgate.net/publication/388801858_Guia_basica_para_el_uso_de_la_libreria_EasyOledUI

@@ -1,4 +1,7 @@
 
+#ifndef TimeFun_H
+#define TimeFun_H
+
 // Para el tiempo
 //-------------------------------------
 #include <ESP32Time.h>
@@ -11,11 +14,12 @@ void setCurrentInternalTime() {
   rtc.setTime(30, 24, 15, 17, 1, 2021);  // 17th Jan 2021 15:24:30  
 }
 
-void getCurrentInternalTime() {
+String getCurrentInternalTime() {
   //
   Serial.println(rtc.getTime("RTC0: %A, %B %d %Y %H:%M:%S"));   // (String) returns time with specified format 
   Serial.println(rtc.getLocalEpoch());         //  (unsigned long) epoch without offset, same for all instances
 
+  return rtc.getTime("%A, %B %d %Y %H:%M:%S");
 
   //  Serial.println(rtc.getTime());          //  (String) 15:24:38
   //  Serial.println(rtc.getDate());          //  (String) Sun, Jan 17 2021
@@ -40,3 +44,5 @@ void getCurrentInternalTime() {
   //  Serial.println(rtc.getMonth());         //  (int)     0     (0-11)
   //  Serial.println(rtc.getYear());          //  (int)     2021
 }
+
+#endif // TimeFun_H
