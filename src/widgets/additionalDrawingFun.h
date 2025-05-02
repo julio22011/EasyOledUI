@@ -1,4 +1,8 @@
 
+#include <Arduino.h> // For String
+#include <Adafruit_GFX.h> // For Adafruit graphics functions
+#include <Adafruit_SSD1306.h> // For Adafruit SSD1306 and SSD1306_WHITE
+
 // En este archivo se eencuentran funciones especiales para dibujar en la pantalla OLED
 // --------------------------------------------------------------------------------------------
 
@@ -25,3 +29,16 @@ void drawDashedLine2(int x0, int y0, int x1, int y1, int dashLength, Adafruit_SS
   //display.display(); // Actualiza la pantalla
 }
 
+
+void printUnderlined(const String& text, int x, int y, int textSize, Adafruit_SSD1306 * display) {
+  display->setTextSize(textSize);
+  display->setTextColor(SSD1306_WHITE);
+  display->setCursor(x, y);
+  display->print(text);
+
+  int charWidth = 2 * textSize; // ancho aproximado por caracter
+  int textWidth = text.length() * charWidth;
+  int underlineY = y + (8 * textSize); // altura de la línea base
+
+  display->drawLine(x, underlineY, x + textWidth, underlineY, SSD1306_WHITE);
+}
