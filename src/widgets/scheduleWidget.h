@@ -328,6 +328,13 @@ void ScheduleWidget::loadInClassMemory(int scheduleDuplexIndex = 0){
     // Poner en memoria de la calse el horario seleccionado
     if(scheduleDuplexIndex < 0 || scheduleDuplexIndex >= schedules.size() / 2) {
         Serial.println("Error: Invalid schedule index or no schedules added yet.");
+        hour1 = 0;
+        minute1 = 0;
+        am_pm1 = 0;
+        hour2 = 0;
+        minute2 = 0;
+        am_pm2 = 0;
+        currentSch = 0; // Cambiar el horario actual a editar
     } else{
         hour1 = schedules[scheduleDuplexIndex * 2].hour;
         minute1 = schedules[scheduleDuplexIndex * 2].minute;
