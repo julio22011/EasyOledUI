@@ -80,6 +80,7 @@ public:
         // Load the saved shcedule from permanent memory
         this->loadSchedule();
     };
+    void setCurrentSch(int schNumber) { currentSch = schNumber; } // Set the current schedule
     void Action(ScheduleAction act);
     void addEmptySchedule();
     void removeSchedule(int schNumber);
@@ -196,8 +197,13 @@ void ScheduleWidget::removeSchedule(int schNumber){
         Serial.println("Error: Invalid schedule index or no schedules added yet.");
     } else{
         schedules.erase(schedules.begin() + schNumber * 2, schedules.begin() + schNumber * 2 + 2);
-        saveSchedule();
+        deleteSchedule(); // Eliminar todos los horarios de la memoria permanente
+        saveSchedule();   // Volver a guardar los horarios restantes
         notification("Horario eliminado");
+        loadSchedule(); // Recargar los horarios después de eliminar uno
+        if(schedules.size() / 2 == 0) {
+            notification("No hay horarios");
+        }
     }
 }
 
@@ -325,16 +331,10 @@ void ScheduleWidget::notification(const String& message){
 }
 
 void ScheduleWidget::loadInClassMemory(int scheduleDuplexIndex = 0){
+
     // Poner en memoria de la calse el horario seleccionado
     if(scheduleDuplexIndex < 0 || scheduleDuplexIndex >= schedules.size() / 2) {
         Serial.println("Error: Invalid schedule index or no schedules added yet.");
-        hour1 = 0;
-        minute1 = 0;
-        am_pm1 = 0;
-        hour2 = 0;
-        minute2 = 0;
-        am_pm2 = 0;
-        currentSch = 0; // Cambiar el horario actual a editar
     } else{
         hour1 = schedules[scheduleDuplexIndex * 2].hour;
         minute1 = schedules[scheduleDuplexIndex * 2].minute;
@@ -406,7 +406,7 @@ void ScheduleWidget::loadSchedule(){
     }
 
     // Cargar el primer horario en la memoria de la clase
-    loadInClassMemory(0);
+    loadInClassMemory(currentSch);
 }
 
 // For deleting all the schedules from the permanent memory
